@@ -8,6 +8,7 @@ import java.util.Map.*;
 import javax.xml.transform.stream.*;
 import javax.xml.validation.*;
 
+import org.basex.build.xml.*;
 import org.basex.io.*;
 import org.basex.query.*;
 import org.basex.query.value.*;
@@ -74,6 +75,8 @@ public class ValidateXsd extends ValidateFn {
           (SchemaFactory) Reflect.get(Reflect.find(IMPL[OFFSET]));
         // Saxon: use version 1.1
         if(SAXON) sf.setProperty(SAXON_VERSION_URI, IMPL[OFFSET + 2]);
+
+        sf.setResourceResolver(new ResourceResolver());
 
         // assign parser features
         for(final Entry<String, String> entry : options.entrySet()) {
