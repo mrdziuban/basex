@@ -27,7 +27,8 @@ public class ValidateDtd extends ValidateFn {
   @Override
   public ArrayList<ErrorInfo> errors(final QueryContext qc) throws QueryException {
     checkCreate(qc);
-    return process(new Validation() {
+
+    final Validation validation = new Validation() {
       @Override
       void process(final ValidationHandler handler)
           throws IOException, ParserConfigurationException, SAXException, QueryException {
@@ -46,11 +47,12 @@ public class ValidateDtd extends ValidateFn {
           sp.set(SerializerOptions.DOCTYPE_SYSTEM, prepare(schema, handler).url());
         }
 
-        final IO in = read(input, sp);
+        final InputSource is = read(input, sp).inputSource();
         final SAXParserFactory sf = SAXParserFactory.newInstance();
         sf.setValidating(true);
-        sf.newSAXParser().parse(in.inputSource(), handler);
+        sf.newSAXParser().parse(is, handler);
       }
-    });
+    };
+    return process(validation, qc);
   }
 }

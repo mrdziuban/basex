@@ -4,8 +4,6 @@ import static org.basex.core.Text.*;
 
 import java.io.*;
 
-import javax.xml.transform.sax.*;
-
 import org.basex.build.*;
 import org.basex.core.*;
 import org.basex.core.jobs.*;
@@ -47,29 +45,21 @@ public final class SAXWrapper extends SingleParser {
   @Override
   public void parse() throws IOException {
     final InputSource is = inputSource();
-    final SAXSource saxs = new SAXSource(is);
     try {
-      XMLReader reader = saxs.getXMLReader();
-      if(reader == null) {
-        reader = XmlParser.reader(options.get(MainOptions.DTD), options.get(MainOptions.XINCLUDE));
-      }
-
       saxh = new SAXHandler(builder, options.get(MainOptions.CHOP),
           options.get(MainOptions.STRIPNS));
-      final CatalogWrapper cw = CatalogWrapper.get(options.get(MainOptions.CATFILE));
-      if(cw != null) reader.setEntityResolver(cw.getEntityResolver());
-
+      final XMLReader reader = XmlParser.reader(options.get(MainOptions.DTD),
+          options.get(MainOptions.XINCLUDE), options.get(MainOptions.CATFILE));
       reader.setDTDHandler(saxh);
       reader.setContentHandler(saxh);
-      reader.setProperty("http://xml.org/sax/properties/lexical-handler", saxh);
       reader.setErrorHandler(saxh);
+      reader.setProperty("http://xml.org/sax/properties/lexical-handler", saxh);
+      reader.parse(is);
 
-      if(is != null) reader.parse(is);
-      else reader.parse(saxs.getSystemId());
     } catch(final SAXParseException ex) {
-      final String msg = Util.info(SCANPOS_X_X, source.path(), ex.getLineNumber(),
+      final String message = Util.info(SCANPOS_X_X, source.path(), ex.getLineNumber(),
           ex.getColumnNumber()) + COLS + Util.message(ex);
-      throw new IOException(msg, ex);
+      throw new IOException(message, ex);
     } catch(final JobException ex) {
       throw ex;
     } catch(final Exception ex) {
@@ -77,11 +67,6 @@ public final class SAXWrapper extends SingleParser {
       // prefix message with source id
       // wrap and return original message
       throw new IOException('"' + source.path() + '"' + Util.message(ex), ex);
-    } finally {
-      if(is != null) {
-        try(Reader r = is.getCharacterStream()) { /* no action */ }
-        try(InputStream ist = is.getByteStream()) { /* no action */ }
-      }
     }
   }
 

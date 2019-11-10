@@ -61,7 +61,7 @@ public class ValidateXsd extends ValidateFn {
   public ArrayList<ErrorInfo> errors(final QueryContext qc) throws QueryException {
     checkCreate(qc);
 
-    return process(new Validation() {
+    final Validation validation = new Validation() {
       @Override
       void process(final ValidationHandler handler) throws IOException, SAXException,
           QueryException {
@@ -75,8 +75,8 @@ public class ValidateXsd extends ValidateFn {
           (SchemaFactory) Reflect.get(Reflect.find(IMPL[OFFSET]));
         // Saxon: use version 1.1
         if(SAXON) sf.setProperty(SAXON_VERSION_URI, IMPL[OFFSET + 2]);
-
-        sf.setResourceResolver(new ResourceResolver());
+        // XML resolver
+        sf.setResourceResolver(new CatalogWrapper(qc.context).getResourceResolver());
 
         // assign parser features
         for(final Entry<String, String> entry : options.entrySet()) {
@@ -92,6 +92,7 @@ public class ValidateXsd extends ValidateFn {
         v.validate(in instanceof IOContent || in instanceof IOStream ?
             new StreamSource(in.inputStream()) : new StreamSource(in.url()));
       }
-    });
+    };
+    return process(validation, qc);
   }
 }

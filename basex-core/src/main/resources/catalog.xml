@@ -1,0 +1,6 @@
+<!-- hier keinen catalog-DOCTYPE hintun, wie das manche Tools oder Leute
+machen, sonst sucht er u.U. vergebens eine DTD… -->
+<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+   <rewriteURI uriStartString="http://standards.iso.org/"
+               rewritePrefix="https://standards.iso.org/"/>
+</catalog>

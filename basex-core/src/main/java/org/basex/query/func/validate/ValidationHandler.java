@@ -1,8 +1,11 @@
 package org.basex.query.func.validate;
 
+import java.io.*;
 import java.util.*;
 
+import org.basex.build.xml.*;
 import org.basex.io.*;
+import org.basex.query.*;
 import org.xml.sax.*;
 import org.xml.sax.helpers.*;
 
@@ -22,9 +25,25 @@ public final class ValidationHandler extends DefaultHandler {
 
   /** Errors. */
   private final ArrayList<ErrorInfo> errors = new ArrayList<>();
+  /** Entity resolver (can be {@code null}). */
+  private final EntityResolver resolver;
+
+  /**
+   * Constructor.
+   * @param qc query context
+   */
+  ValidationHandler(final QueryContext qc) {
+    resolver = new CatalogWrapper(qc.context).getEntityResolver();
+  }
 
   /** Schema URL. */
   private IO schema;
+
+  @Override
+  public InputSource resolveEntity(final String publicId, final String systemId)
+      throws IOException, SAXException {
+    return resolver != null ? resolver.resolveEntity(publicId, systemId) : null;
+  }
 
   @Override
   public void fatalError(final SAXParseException ex) {

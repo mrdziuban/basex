@@ -6,7 +6,9 @@ import java.lang.reflect.*;
 
 import javax.xml.transform.*;
 
+import org.basex.core.*;
 import org.basex.util.*;
+import org.w3c.dom.ls.*;
 import org.xml.sax.*;
 
 /**
@@ -22,10 +24,12 @@ import org.xml.sax.*;
  * @author Liam Quin
  */
 public final class CatalogWrapper {
-  /** Package declaration for CatalogManager. */
+  /** CatalogManager class. */
   private static final Class<?> MANAGER;
-  /** Package declaration for CatalogResolver constructor. */
+  /** CatalogResolver constructor. */
   private static final Constructor<?> RESOLVER;
+  /** CatalogResolver constructor. */
+  private static final Constructor<?> RESOURCERESOLVER;
 
   static {
     // try to locate catalog manager from xml-resolver-1.2.jar library
@@ -39,30 +43,18 @@ public final class CatalogWrapper {
     }
     MANAGER = manager;
     RESOLVER = find(resolver, manager);
+
+    Class<?> rresolver = find("org.apache.xerces.util.XMLCatalogResolver");
+    if(rresolver == null) {
+      rresolver = find("com.sun.org.apache.xerces.internal.util.XMLCatalogResolver");
+    }
+    RESOURCERESOLVER = find(rresolver, String[].class);
   }
 
   /** Instance of catalog manager. */
   private final Object cm = Reflect.get(MANAGER);
-
-  /**
-   * Hidden constructor.
-   * @param paths semicolon-separated list of catalog files
-   */
-  private CatalogWrapper(final String paths) {
-    if(System.getProperty("xml.catalog.ignoreMissing") == null) {
-      invoke(method(MANAGER, "setIgnoreMissingProperties", boolean.class), cm, true);
-    }
-    invoke(method(MANAGER, "setCatalogFiles", String.class), cm, paths);
-  }
-
-  /**
-   * Returns an instance of the catalog wrapper.
-   * @param paths semicolon-separated list of catalog files
-   * @return instance, or {@code null} if no catalog manager is available or if the list is empty
-   */
-  public static CatalogWrapper get(final String paths) {
-    return available() && !paths.isEmpty() ? new CatalogWrapper(paths) : null;
-  }
+  /** Catalog files. */
+  private final String catfile;
 
   /**
    * Checks if the catalog manager is available.
@@ -73,18 +65,49 @@ public final class CatalogWrapper {
   }
 
   /**
+   * Constructor.
+   * @param ctx database context
+   */
+  public CatalogWrapper(final Context ctx) {
+    this(ctx.options.get(MainOptions.CATFILE));
+  }
+
+  /**
+   * Constructor.
+   * @param catfile semicolon-separated list of catalog files
+   */
+  public CatalogWrapper(final String catfile) {
+    this.catfile = catfile;
+    if(!catfile.isEmpty() && available()) {
+      if(System.getProperty("xml.catalog.ignoreMissing") == null) {
+        invoke(method(MANAGER, "setIgnoreMissingProperties", boolean.class), cm, true);
+      }
+      invoke(method(MANAGER, "setCatalogFiles", String.class), cm, catfile);
+    }
+  }
+
+  /**
    * Returns a URI resolver.
-   * @return URI resolver
+   * @return URI resolver (can be {@code null})
    */
   public URIResolver getURIResolver() {
-    return (URIResolver) Reflect.get(RESOLVER, cm);
+    return RESOLVER != null ? (URIResolver) Reflect.get(RESOLVER, cm) : null;
   }
 
   /**
    * Returns an entity resolver.
-   * @return entity resolver
+   * @return entity resolver (can be {@code null})
    */
   public EntityResolver getEntityResolver() {
-    return (EntityResolver) Reflect.get(RESOLVER, cm);
+    return RESOLVER != null ? (EntityResolver) Reflect.get(RESOLVER, cm) : null;
+  }
+
+  /**
+   * Returns a resource resolver.
+   * @return resource resolver (can be {@code null})
+   */
+  public LSResourceResolver getResourceResolver() {
+    return RESOURCERESOLVER != null ? (LSResourceResolver)
+      Reflect.get(RESOURCERESOLVER, new Object[] { new String[] { catfile } }) : null;
   }
 }

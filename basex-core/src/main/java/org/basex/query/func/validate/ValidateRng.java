@@ -28,7 +28,8 @@ public class ValidateRng extends ValidateFn {
   @Override
   public ArrayList<ErrorInfo> errors(final QueryContext qc) throws QueryException {
     checkCreate(qc);
-    return process(new Validation() {
+
+    final Validation validation = new Validation() {
       @Override
       void process(final ValidationHandler handler) throws IOException, QueryException {
         final IO in = read(toNodeOrAtomItem(0, qc), null);
@@ -97,6 +98,7 @@ public class ValidateRng extends ValidateFn {
           throw VALIDATE_ERROR_X.get(info, Util.rootException(ex));
         }
       }
-    });
+    };
+    return process(validation, qc);
   }
 }

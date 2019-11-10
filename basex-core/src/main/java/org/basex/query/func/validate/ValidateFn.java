@@ -105,11 +105,14 @@ abstract class ValidateFn extends StandardFunc {
   /**
    * Runs the specified validator.
    * @param v validator code
+   * @param qc query context
    * @return errors
    * @throws QueryException query exception
    */
-  protected final ArrayList<ErrorInfo> process(final Validation v) throws QueryException {
-    final ValidationHandler handler = new ValidationHandler();
+  protected final ArrayList<ErrorInfo> process(final Validation v, final QueryContext qc)
+      throws QueryException {
+
+    final ValidationHandler handler = new ValidationHandler(qc);
     try {
       v.process(handler);
     } catch(final SAXException ex) {
