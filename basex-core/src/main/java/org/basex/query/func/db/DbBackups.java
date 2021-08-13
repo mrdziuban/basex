@@ -28,6 +28,8 @@ public final class DbBackups extends StandardFunc {
   private static final String DATE = "date";
   /** Database string. */
   private static final String DATABASE = "database";
+  /** Modified string. */
+  private static final String MODIFIED = "modified";
 
   @Override
   public Iter iter(final QueryContext qc) throws QueryException {
@@ -42,11 +44,13 @@ public final class DbBackups extends StandardFunc {
       @Override
       public FElem get(final long i) {
         final String backup = backups.get((int) i);
-        final long length = new IOFile(dbPath, backup + IO.ZIPSUFFIX).length();
+        final IOFile file = new IOFile(dbPath, backup + IO.ZIPSUFFIX);
+        final long length = file.length();
+        final long modified = file.timeStamp();
         final String db = Databases.name(backup);
         final Dtm dtm = Dtm.get(DateTime.parse(Databases.date(backup)).getTime());
         return new FElem(BACKUP).add(backup).add(DATABASE, db).add(DATE, dtm.string(info)).
-            add(SIZE, token(length));
+            add(MODIFIED, token(modified)).add(SIZE, token(length));
       }
     };
   }
